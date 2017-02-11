@@ -1,0 +1,845 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+        <title id="title">后台</title>
+        <meta name="keywords" content="" />
+        <meta name="description" content=" " />
+         <meta content="width=540px,target-densitydpi=high-dpi,  user-scalable=no" name="viewport" >
+<style>
+     div{margin:0 auto }
+	 .fromlime{
+		height: 24px;
+		width: 400px;
+		border: 1px solid #CCCCCC;
+		text-indent: 4px;
+	 }
+	 .fromlimes{
+		height: 24px;
+		line-height: 24px;
+		border: 1px solid #CCCCCC;
+		text-indent: 4px; 
+	 }
+	 .title{  height:165px;text-align:center; background-repeat:no-repeat; background-position:center;}
+	 #mleft{
+		 transition:all 1s;
+		 -moz-transition:all 1s;
+		 -webkit-transition:all 1s;
+		 -o-transition:all 1s;
+	  }
+</style>
+<script src="/load.js?24"></script>
+</head>
+
+<body >
+	<div id="top">
+    
+    	<div id="houtaiT" style="border-bottom:3px solid #d1d1d1;margin-bottom:10px;padding: 15px 0;" class="clearfix"></div>
+        
+        <div id="houtaiM" >
+ 
+            <div id="divmain" style="max-width:920px;min-width:470px; background-color:#eee;padding:2px;">
+            <div id=gui style="height:50px"></div>
+            <div id=t style="height:50px"></div>
+             <div id=ok style="height:50px"></div>
+              <div id=log style="height:50px"></div>
+           </div>
+        </div>
+    </div>
+</body>
+	<script>
+		var DEBUG = true;
+		// 原麻将排序
+		var mj =[ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33];
+		// 映射1，用于判断十三烂、字牌不能凑成顺子时
+		var mj1=[11,12,13,14,15,16,17,18,19,31,32,33,34,35,36,37,38,39,51,52,53,54,55,56,57,58,59,70,73,76,79,90,93,96];
+		// 映射2，用于字牌能凑成顺子时
+		var mj2=[11,12,13,14,15,16,17,18,19,31,32,33,34,35,36,37,38,39,51,52,53,54,55,56,57,58,59,70,71,72,73,90,91,92];
+		// 各类型
+		var type={
+			Wan: 1,
+			Tiao: 3,
+			Tong: 5,
+			Feng: 7,
+			Jian: 9
+		};
+
+		// 麻将名映射
+		var mjm = {
+			"0": "1万",
+			"1": "2万",
+			"2": "3万",
+			"3": "4万",
+			"4": "5万",
+			"5": "6万",
+			"6": "7万",
+			"7": "8万",
+			"8": "9万",
+
+			"9": "1条",
+			"10": "2条",
+			"11": "3条",
+			"12": "4条",
+			"13": "5条",
+			"14": "6条",
+			"15": "7条",
+			"16": "8条",
+			"17": "9条",
+
+			"18": "1筒",
+			"19": "2筒",
+			"20": "3筒",
+			"21": "4筒",
+			"22": "5筒",
+			"23": "6筒",
+			"24": "7筒",
+			"25": "8筒",
+			"26": "9筒",
+
+			"27": "东",
+			"28": "南",
+			"29": "西",
+			"30": "北",
+
+			"31": "中",
+			"32": "发",
+			"33": "白"
+		};
+		var fenConfig = { // 赣州麻将
+ 			"base":1,
+			"FenList": { 
+				//代号 = 基础值 + (isDe?1:0)*4 + (isJingDiao ? (nGangHouMopai!=0?3:2) : (isZiMo?1:0))
+			    // 0: 带精点炮 1: 带精自摸 2: 精吊     3: 杠吊
+				// 4: 德国点炮 5: 德国自摸 6: 德国精吊 7: 德国杠吊
+
+				// 默认不能胡0分
+				"0": {loser:  0, other:  0, winner:  0},
+
+				// 平胡 基础值：910
+				"910": {loser:  0, other:  0, winner:  0},
+				"911": {loser:  8, other:  8, winner: 24},
+				"912": {loser:  8, other:  8, winner: 24},
+				"913": {loser: 21, other: 21, winner: 63},
+				"914": {loser: 13, other:  4, winner: 21},
+				"915": {loser: 13, other: 13, winner: 39},
+				"916": {loser: 21, other: 21, winner: 63},
+				"917": {loser: 37, other: 37, winner:111},
+
+				// 十三烂 基础值：920
+				"920": {loser: 13, other:  4, winner: 21},
+				"921": {loser:  8, other:  8, winner: 24},
+				"922": {loser:  0, other:  0, winner:  0},
+				"923": {loser:  0, other:  0, winner:  0},
+				"924": {loser: 21, other:  8, winner: 37},
+				"925": {loser: 21, other: 21, winner: 63},
+				"926": {loser:  0, other:  0, winner:  0},
+				"927": {loser:  0, other:  0, winner:  0},
+
+				// 七星十三烂 基础值：930
+				"930": {loser: 21, other:  8, winner: 37},
+				"931": {loser: 21, other: 21, winner: 63},
+				"932": {loser:  0, other:  0, winner:  0},
+				"933": {loser:  0, other:  0, winner:  0},
+				"934": {loser: 37, other: 16, winner: 69},
+				"935": {loser: 37, other: 37, winner:111},
+				"936": {loser:  0, other:  0, winner:  0},
+				"937": {loser:  0, other:  0, winner:  0},
+
+				// 小七（七小对） 基础值：940
+				"940": {loser:  8, other:  4, winner: 16},
+				"941": {loser:  8, other:  8, winner: 24},
+				"942": {loser: 16, other: 16, winner: 48},
+				"943": {loser:  0, other:  0, winner:  0},
+				"944": {loser: 37, other: 16, winner: 69},
+				"945": {loser: 37, other: 37, winner:111},
+				"946": {loser: 37, other: 37, winner:111},
+				"947": {loser:  0, other:  0, winner:  0},
+
+				// 大七（碰碰胡） 基础值：950
+				"950": {loser: 16, other:  8, winner: 32},
+				"951": {loser: 16, other: 16, winner: 48},
+				"952": {loser: 32, other: 32, winner: 96},
+				"953": {loser: 96, other: 96, winner:288},
+				"954": {loser: 37, other: 16, winner: 69},
+				"955": {loser: 37, other: 37, winner:111},
+				"956": {loser: 64, other: 64, winner:192},
+				"957": {loser:128, other:128, winner:384},
+			},
+ 			"IFDJ":0,//是否叠加
+
+			"Hu":{1:"*3",2:"*3"},
+			"DaHu": { 1: "*1", 2: "*1" },//叠加系数 
+		 	"Gang":{0:2,1:2,2:2},//0点杠,1暗杠，2碰后杠
+			"JingGang": {0:40, 1:20} // 精杠 正精40，副精20
+		};
+		var comm = {
+			copyArray: function(tagArr) {
+				var returnArr = [];
+				for (var i = 0; i < tagArr.length; i++) { 
+					returnArr[i] = tagArr[i] instanceof Array ? copyArray(tagArr[i]) : tagArr[i];
+				}
+				return returnArr;
+			}
+		};
+		var GanZhouHuModule = function(_comm,_gameConfig, _fenConfig) {
+			this.comm = _comm;
+			this.gameConfig = _gameConfig;
+			this.fenList = _fenConfig["FenList"] || {};
+			
+			return this;
+		};
+
+		/*************************************************************/
+		/*函数功能：接收需要的数据，预处理
+		/*入口参数：
+		/*返回类型：void
+		/*************************************************************/
+		GanZhouHuModule.prototype.Preprocess = function (mymja, pai, mymjgui, chi, peng, gang) {
+			mymja.sort(function(a,b) { return a-b; });
+			mymjgui.sort(function(a,b) { return a-b; });
+			this.mymja = mymja;
+			this.mymjgui = mymjgui;
+			this.mymjl = this.mymja.length;//麻将的长度
+			this.guin=0;//未用的精数
+			this.hupai=pai; // 胡的牌
+			this.gui1 = -1; // 正精
+			this.gui1n = 0; // 正精数
+			this.gui2 = -1; // 副精
+			this.gui2n = 0; // 副精数
+
+			// 统计出其中一个精的数量（另外一种就是guin-gui1n），用于详细判断是否德国、是否精吊
+			if(mymjgui.length!=0) {
+				var gui1 = this.gui1 = mymjgui[0], i, len=mymjgui.length;
+				this.gui1n=1;
+				for(i=1; i<len; i++) {
+					if(gui1==mymjgui[i]) {
+						this.gui1n++;
+					} else {
+						this.gui2=mymjgui[i];
+						break;
+					}
+				}
+			}
+			this.gui2n = mymjgui.length-this.gui1n; // 副精数
+			// 是不是自摸
+			this.isZiMo = false;
+			// 是不是杠后胡
+			this.gangHouHu = false;
+
+			this.chi = chi;
+			this.peng = peng;
+			this.gang = gang;
+		};
+
+		/*************************************************************/
+		/*函数功能：重新初始化对象
+		/*入口参数： isZiMo: 是不是自摸  nGangHouMopai: 杠后摸了几张牌（0表示不是杠后胡，1表示杠开，2表示杠后下一轮胡）
+		/*返回类型：int （胡的类型代码）
+		/*************************************************************/
+		GanZhouHuModule.prototype.ting = function (isZiMo, nGangHouMopai) {
+			var SSL=0, QXD=0, PPH=0, PH=0;
+			var thupai = this.hupai; // 备份胡的牌
+			var tgui1 = this.gui1; // 备份上精
+			var tgui2 = this.gui2; // 备份下精
+			this.isZiMo = isZiMo;
+			this.nGangHouMopai = nGangHouMopai;
+			var mymja=[].concat(this.mymja), mymjgui=[].concat(this.mymjgui);
+			// 检查十三烂需先映射牌到类型1
+			this.mymja = this.projectPaiArray(mymja, mj1);
+			this.mymjgui = this.projectPaiArray(mymjgui, mj1);
+			this.hupai = mj1[thupai];
+			this.gui1 = mj1[tgui1];
+			this.gui2 = mj1[tgui2];
+			SSL = this.checkHuShiSanLan();
+
+			// 根据是否开启字牌顺子，将麻将牌映射到类型1或2
+			if(this.gameConfig["ZipaiShunzi"]) {
+				this.mymja = this.projectPaiArray(mymja, mj2);
+				this.mymjgui = this.projectPaiArray(mymjgui, mj2);
+				this.hupai = mj2[thupai];
+				this.gui1 = mj2[tgui1];
+				this.gui2 = mj2[tgui2];
+			}
+			QXD = this.checkHuQiXiaoDui();
+			PPH = this.checkHuPengPengHu();
+			PH = this.checkHuPingHu();
+
+			// 看哪种牌型最高分，返回对应的牌型
+			ret = PH;
+			ret = this.fenList[ret.type].winner < this.fenList[SSL.type].winner ? SSL : ret;
+			ret = this.fenList[ret.type].winner < this.fenList[QXD.type].winner ? QXD : ret;
+			ret = this.fenList[ret.type].winner < this.fenList[PPH.type].winner ? PPH : ret;
+
+			return ret;
+		};
+
+		// 找到值为pai的未用麻将
+		GanZhouHuModule.prototype.findmj = function (pai,si,mymja,useda) {
+			var i, len = mymja.length;
+			for(i=si; i<len; i++) {
+				if(useda[i]==0) {
+					if(pai<mymja[i])return -1;
+					if(pai==mymja[i])return i;
+				}
+			}
+			return -1;
+		}
+
+		/*************************************************************/
+		/*函数功能：带精检测能否胡（一旦能胡立即返回将牌）
+		/*入口参数：mymja  要检测的除去鬼牌牌数组   guin 鬼牌数
+		/*返回类型：int 将牌（不能胡返回-1）
+		/*************************************************************/
+		GanZhouHuModule.prototype.checkGuiHu3nP2 = function (mymja, guin) {
+			var checked={}, i, nwymj=mymja.length, useda=[];
+			if(DEBUG && (nwymj+guin)%3!=2) {
+				console.log('error: unexpected nwymj+guin :'+(nwymj+guin)+' in checkGuiHu3nP2');
+			}
+			for(i=0; i<nwymj; i++) {
+				var p = mymja[i];
+				if(!checked[p]) { // 尚未检查这张牌
+					useda = [0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+					if(mymja[i+1]==p) { // 能凑一对将
+						useda[i]=useda[i+1]=1;
+						if(this.checkGuiHu3n(mymja, useda, nwymj-2, guin)) {
+							return p;
+						}
+						useda[i]=useda[i+1]=0;
+					} else if(guin>0) { // 不能凑将，可是鬼牌有剩
+						useda[i]=1;
+						if(this.checkGuiHu3n(mymja, useda, nwymj-1, guin-1)) {
+							return p;
+						}
+						useda[i]=0;
+					}
+				}
+				checked[p]=true;
+			}
+			return -1;
+		};
+
+		/*************************************************************/
+		/*函数功能：带精检测3n张牌能否胡（一旦能胡立即返回）
+		/*入口参数：nwymj 剩余未用麻将数   guin 鬼牌数
+		/*返回类型：bool
+		/*************************************************************/
+		GanZhouHuModule.prototype.checkGuiHu3n = function (mymja, useda, nwymj, guin) {
+			if(DEBUG && (nwymj+guin)%3!=0) {
+				console.log('error: unexpected nwymj+guin :'+(nwymj+guin)+' in checkGuiHu3n');
+			}
+			if(nwymj*2 <= guin) return true;
+			var pi=useda.indexOf(0), p=mymja[pi];
+			var shunziia = []; // 凑顺子或刻子的牌数组
+			// 先找顺子
+			var p1i=this.findmj(p+1,pi+1,mymja,useda);
+			var p2i=this.findmj(p+2,pi+1,mymja,useda);
+			var p3i=this.findmj(p+3,pi+1,mymja,useda);
+			shunziia = [pi];
+			p1i!=-1 && (shunziia.push(p1i), useda[p1i]=1);
+			p2i!=-1 && (shunziia.push(p2i), useda[p2i]=1);
+			if(p==70) { // 对带东风顺子特殊检测
+				p3i!=-1 && (shunziia.push(p3i), useda[p3i]=1);
+			}
+			if(shunziia.length==2) { // 只要有2张或以上，就可以考虑凑顺子（带鬼）
+				useda[shunziia[0]]=useda[shunziia[1]]=1;
+				if(this.checkGuiHu3n(mymja, useda, nwymj-2, guin-1)) {
+					return true;
+				}
+				useda[shunziia[0]]=useda[shunziia[1]]=0; // 不能胡，复原
+			} else if(shunziia.length>=3) {
+				var i, k;
+				for(i=1; i<shunziia.length-1; i++) { // 遍历所有可能（针对东南西北全齐的情况）
+					for(k=i+1; k<shunziia.length; k++) {
+						useda[shunziia[0]]=useda[shunziia[i]]=useda[shunziia[k]]=1; // 先标记已使用
+						if(this.checkGuiHu3n(mymja, useda, nwymj-3, guin)) {
+							return true;
+						}
+						useda[shunziia[0]]=useda[shunziia[i]]=useda[shunziia[k]]=0; // 不能胡，复原
+					}
+				}
+			}
+			
+			// 再找刻子
+			p1i=this.findmj(p,pi+1,mymja,useda);
+			p2i=this.findmj(p,pi+2,mymja,useda);
+			if(p1i!=-1 || p2i!=-1) {
+				useda[pi]=1;
+				p1i!=-1 && (useda[p1i]=1);
+				p2i!=-1 && (useda[p2i]=1);
+				if(p1i*p2i<0) {
+					nwymj-=2; guin-=1;
+				} else {
+					nwymj-=3;
+				}
+				if(this.checkGuiHu3n(mymja, useda, nwymj, guin)) {
+					return true;
+				} else {
+					useda[pi]=0;
+					p1i!=-1 && (useda[p1i]=0);
+					p2i!=-1 && (useda[p2i]=0);
+					if(p1i*p2i<0) {
+						nwymj+=2; guin+=1;
+					} else {
+						nwymj+=3;
+					}
+				}
+			}
+
+			// 最后尝试找2个鬼牌与这张散牌凑一起
+			if(guin>=2) {
+				useda[pi]=1;
+				if(this.checkGuiHu3n(mymja, useda, nwymj-1, guin-2)) {
+					return true;
+				} else {
+					useda[pi]=0;
+				}
+			}
+			
+			// 都找不到
+			return false;
+		};
+
+		/*************************************************************/
+		/*函数功能：带精检测能否胡平胡（基本牌型，有德国或精钓中的一种）
+		/*入口参数： 
+		/*返回类型：int   根据fenList获取最高的分数
+		/*************************************************************/
+		GanZhouHuModule.prototype.checkHuPingHu = function () {
+			var isDe=false, isJingDiao=false;
+			var mymja = this.mymja.concat(this.mymjgui).sort();
+			var jiang = this.checkGuiHu3nP2(mymja, 0);
+			var canHu = false;
+			isDe = jiang!=-1;
+			if(this.isZiMo) { // 自摸是精钓的前提
+				if(isDe && this.mymjgui.indexOf(jiang)!=-1 && this.hupai==jiang) { // 如果德国时将牌就是精牌，并且胡牌也是这张精，那么肯定是精钓
+					isJingDiao = true;
+				} else { // 不是德国，就尝试抽出一张精牌和胡牌，如果能胡就是精钓
+					// 先抽出胡牌
+					mymja = [].concat(this.mymja); // 拿到不带鬼的手牌
+					var guin = this.mymjgui.length;
+					var hupaii = mymja.indexOf(this.hupai);
+					if(hupaii!=-1) { // 尝试在手牌找胡牌，找到就去掉
+						mymja.splice(hupaii, 1);
+					} else { // 尝试在鬼牌中找胡牌，找到就减少一张鬼牌
+						hupaii = this.mymjgui.indexOf(this.hupai);
+						if(hupaii!=-1) {
+							guin-=1;
+						} else {
+							DEBUG && console.log("'error: 胡牌在鬼牌以及手牌上都找不到 in checkHuPingHu'");
+						}
+					}
+					// 抽出精牌并检测是否能胡
+					if(guin>0) {
+						isJingDiao = this.checkGuiHu3n(mymja, [0,0,0,0,0,0,0,0,0,0,0,0,0,0], mymja.length, guin-1);
+					}
+				}
+			}
+			canHu = isDe||isJingDiao; // 只要是德国或者精钓，就可以胡
+
+			// 不是德国，不是精钓，并且是杠开的情况下，检查是否能带精胡牌
+			if(!canHu && this.isZiMo && this.nGangHouMopai==1) {
+				if(this.checkGuiHu3nP2([].concat(this.mymja), this.mymjgui.length)) {
+					canHu=true;
+				}
+			}
+			
+			return {type:canHu ? 910 + (isDe?1:0)*4 + (isJingDiao ? (this.nGangHouMopai!=0?3:2) : (this.isZiMo?1:0)) : 0, 
+				isDe:isDe, isZiMo:this.isZiMo, nGangHouMopai:this.nGangHouMopai, isJingDiao:isJingDiao
+			};
+		};
+
+		/*************************************************************/
+		/*函数功能：带精检测能否胡大七（碰碰胡）
+		/*入口参数： 
+		/*返回类型：int   根据fenList获取最高的分数
+		/*************************************************************/
+		GanZhouHuModule.prototype.checkHuPengPengHu = function () {
+			// 首先，碰碰胡不能有吃
+			if(this.chi.length!=0) return {type:0, isDe:false, isZiMo:this.isZiMo, nGangHouMopai:this.nGangHouMopai, isJingDiao:false};
+			// 先判德国
+			var isDe = true;
+			var mymja = this.mymja.concat(this.mymjgui).sort();
+			var jiang = -1;
+			var i, len=mymja.length;
+			for(i=0; i<len; i++) {
+				var p = mymja[i];
+				var p1 = mymja[i+1];
+				var p2 = mymja[i+2];
+				if(p==p1 && p==p2) {
+					i += 2;
+				} else if(p==p1 && jiang==-1) {
+					jiang = p;
+					i += 1;
+				} else {
+					isDe = false;
+					break;
+				}
+			}
+			// 再判精钓
+			var isJingDiao = false;
+			var guin = 0;
+			if(this.isZiMo) { // 自摸的情况下考虑是否精钓
+				if(isDe && this.mymjgui.indexOf(jiang)!=-1) { // 是德国，考虑是否德国精钓
+					isJingDiao = true;
+				} else { // 考虑去掉一个精以及胡牌后，剩下的牌能否都凑成刻子
+					// 先去掉胡牌
+					mymja = [].concat(this.mymja);
+					guin = this.mymjgui.length;
+					var hupaii = mymja.indexOf(this.hupai);
+					if(hupaii != -1) {
+						mymja.splice(hupaii, 1);
+					} else if(this.mymjgui.indexOf(this.hupai)!=-1) {
+						guin -= 1;
+					} else {
+						DEBUG && console.log("'error: 胡牌在鬼牌以及手牌上都找不到 in checkHuPengPengHu'");
+					}
+
+					if(guin>0) { // 再去掉一个精，看剩下的牌能否都凑成刻子
+						isJingDiao = true;
+						guin -= 1;
+						len = mymja.length;
+						for(i=0; i<len; i++) {
+							var p = mymja[i];
+							var count = 0; // 有多少张相同的牌
+							mymja[i+1]==p && (count += 1);
+							mymja[i+2]==p && (count += 1);
+							guin = guin - (2-count);
+							if(guin < 0) {
+								isJingDiao = false;
+								break;
+							}
+							i += count;
+						}
+					}
+				}
+			}
+			// 既不是德国也不是精钓，判断能否胡
+			if(!isDe && !isJingDiao) {
+				mymja = [].concat(this.mymja);
+				guin = this.mymjgui.length;
+				len = mymja.length;
+				for(i=0; i<len; i++) {
+					var p = mymja[i];
+					var count = 0; // 重复的牌数
+					p==mymja[i+1] && (count+=1);
+					p==mymja[i+2] && (count+=1);
+					guin = guin - (2-count);
+					if(guin<-1) {
+						return {type:0, isDe:false, isZiMo:this.isZiMo, nGangHouMopai:this.nGangHouMopai, isJingDiao:false};
+					}
+					i += count;
+				}
+			}
+
+			return {type:950 + (isDe?1:0)*4 + (isJingDiao ? (this.nGangHouMopai!=0?3:2) : (this.isZiMo?1:0)),
+				isDe:isDe, isZiMo:this.isZiMo, nGangHouMopai:this.nGangHouMopai, isJingDiao:isJingDiao
+			};
+		};
+
+		/*************************************************************/
+		/*函数功能：带精检测能否胡七小对 
+		/*入口参数： 
+		/*返回类型：int   根据fenList获取最高的分数
+		/*************************************************************/
+		GanZhouHuModule.prototype.checkHuQiXiaoDui = function () {
+			// 首先，七小对不能有吃碰杠（手牌+鬼牌 数量为14）
+			var mymja = this.mymja.concat(this.mymjgui).sort();
+			if(mymja.length != 14) return {type:0, isDe:false, isZiMo:this.isZiMo, nGangHouMopai:this.nGangHouMopai, isJingDiao:false}; 
+			// 先判断是否德国
+			var i, len=mymja.length;
+			var isDe = true;
+			for(i=0; i<len; i+=2) {
+				if(mymja[i]!=mymja[i+1]) {
+					isDe = false;
+					break;
+				}
+			}
+
+			// 再判断精钓，自摸是精钓的前提
+			var isJingDiao = false;
+			var guin = 0;
+			if(this.isZiMo) {
+				if(isDe && this.mymjgui.indexOf(this.hupai)!=-1) { // 是德国，考虑是否德国精钓
+					isJingDiao = true;
+				} else { // 考虑去掉一个精以及胡牌后，剩下的牌能否都凑成对子
+					// 先去掉胡牌
+					mymja = [].concat(this.mymja);
+					guin = this.mymjgui.length;
+					var hupaii = mymja.indexOf(this.hupai);
+					if(hupaii != -1) {
+						mymja.splice(hupaii, 1);
+					} else if(this.mymjgui.indexOf(this.hupai)!=-1) {
+						guin -= 1;
+					} else {
+						DEBUG && console.log("'error: 胡牌在鬼牌以及手牌上都找不到 in checkHuQiXiaoDui'");
+					}
+
+					if(guin>0) { // 再去掉一个精，看剩下的牌能否都凑成对子
+						isJingDiao = true;
+						guin -= 1;
+						len = mymja.length;
+						for(i=0; i<len; i++) {
+							var count = mymja[i+1]==mymja[i] ? 1 : 0; // 有多少张相同的牌
+							guin = guin - (1-count);
+							if(guin < 0) {
+								return {type:0, isDe:false, isZiMo:this.isZiMo, nGangHouMopai:this.nGangHouMopai, isJingDiao:false}; 
+							}
+							i += count;
+						}
+					}
+				}
+			}
+
+			// 既不是德国也不是精钓，判断能否胡
+			if(!isDe && !isJingDiao) {
+				mymja = [].concat(this.mymja);
+				guin = this.mymjgui.length;
+				len = mymja.length;
+				for(i=0; i<len; i++) {
+					var count = mymja[i+1]==mymja[i] ? 1 : 0; // 有多少张相同的牌
+					guin = guin - (1-count);
+					if(guin < 0) {
+						isJingDiao = false;
+						break;
+					}
+					i += count;
+				}
+			}
+			
+			return {type:940 + (isDe?1:0)*4 + (isJingDiao ? (this.nGangHouMopai!=0?3:2) : (this.isZiMo?1:0)), 
+				isDe:isDe, isZiMo:this.isZiMo, nGangHouMopai:this.nGangHouMopai, isJingDiao:isJingDiao
+			};
+		};
+
+		/*************************************************************/
+		/*函数功能：带精检测能否胡十三烂
+		/*入口参数：
+		/*返回类型：int   根据fenList获取最高的分数
+		/*************************************************************/
+		GanZhouHuModule.prototype.checkHuShiSanLan = function () {
+			// 首先，十三烂不能有吃碰杠
+			if(this.mymjl+this.mymjgui.length!=14) return {type:0, isDe:false, isZiMo:this.isZiMo, nGangHouMopai:this.nGangHouMopai, isJingDiao:false};  
+			var zipai = [70,73,76,79,90,93,96];
+			var isDe=true, isJingDiao=false;
+			var mymja = this.mymja;
+			// 首先，已有的手牌（不算精牌），间隔都要大于2，否则不能胡十三烂
+			var i;
+			// 将精牌当作还原精插入手牌，判断是不是德国
+			var tmja = mymja.concat(this.mymjgui), len=tmja.length;
+			tmja.sort(function(a,b) {return a-b});
+			for(i=0; i<len-1; i++) {
+				if(tmja[i+1]-tmja[i]<=2) {
+					isDe = false;
+				}
+				// 去掉已有的字牌，用于判断是不是七星
+				var idx1 = zipai.indexOf(tmja[i]);
+				idx1!=-1 && zipai.splice(idx1, 1);
+				if(i==len-2) {
+					var idx2 = zipai.indexOf(tmja[i+1]);
+					idx2!=-1 && zipai.splice(idx2, 1);
+				}
+			}
+			// 如果是德国，肯定是能胡的。不是德国，就进一步确认是否能胡
+			if(!isDe) {
+				for(i=0; i<this.mymjl-1; i++) { // 首先手牌间隔要大于2
+					if(mymja[i+1]-mymja[i]<=2) return {type:0, isDe:isDe, isZiMo:this.isZiMo, nGangHouMopai:this.nGangHouMopai, isJingDiao:isJingDiao};  
+				}
+				// 在所有牌间隔都大于2的情况下，只要序数牌能有7张或以上（例如不能是2,7万2,7条2,7筒），那么就能胡十三烂了
+				if(_getMaxXushuCount(mymja)<7) {
+					return {type:0, isDe:isDe, isZiMo:this.isZiMo, nGangHouMopai:this.nGangHouMopai, isJingDiao:isJingDiao};
+				}
+			}
+			// 到这里没有return，就是能胡十三烂，接下来得出牌型
+			// 只要字牌数组空了，那么就是七星十三烂，否则是普通十三烂
+			var base = zipai.length==0 ? 930 : 920;
+			return {type:base + (isDe?1:0)*4 + (isJingDiao ? (this.nGangHouMopai!=0?3:2) : (this.isZiMo?1:0)),
+				isDe:isDe, isZiMo:this.isZiMo, nGangHouMopai:this.nGangHouMopai, isJingDiao:isJingDiao
+			};
+			// 内部使用函数，求序数牌最多能有多少张
+			function _getMaxXushuCount(paia) {
+				var i, j, xushu=[], pail=paia.length, ret=[];
+				// 找到所有的序数牌
+				for(i=0; i<pail; i++) {
+					if(paia[i]<70) {
+						xushu.push(paia[i]);
+					} else {
+						break;
+					}
+				}
+				// 尝试为xushu数组一头一尾插入1万和9筒
+				xushu[0]-11>2 && xushu.splice(0,0,11);
+				59-xushu[xushu.length-1]>2 && xushu.push(59);
+				for(i=0; i<xushu.length-1; i++) { // 在保证每张牌间隔大于2下，尽量往xushu插入牌
+					var nextPai = mj1[_getPreNext(xushu[i], 1)];
+					if(xushu[i+1]-nextPai>2) {
+						xushu.splice(i+1, 0, nextPai);
+					}
+				}
+				return xushu.length; // 最多可以有的序数牌数
+			}
+			// 内部使用函数，求上一个/下一个相隔2以上的牌在mj数组的序数
+			function _getPreNext(pai, preOrNext) {
+				var i, idx=mj1.indexOf(pai);
+				do {
+					idx += preOrNext;
+				} while(mj1[idx] && (mj1[idx]-pai)*preOrNext<=2);
+				return idx;
+			}
+		};
+
+		/*************************************************************/
+		/*函数功能：将给的牌映射到某种排序
+		/*入口参数：mja 牌数组  pattern 映射模版
+		/*返回类型：[]
+		/*************************************************************/
+		GanZhouHuModule.prototype.projectPaiArray = function (mja, pattern) {
+			var i, len=mja.length, ret=[];
+			for(i=0; i<len; i++) {
+				ret[i] = pattern[mja[i]];
+			}
+			return ret;
+		}
+
+
+		// 用于测试
+		var huModule = new GanZhouHuModule(comm, {ZipaiShunzi:true}, fenConfig);
+		function xp() {
+			var i,len;
+			var mymja = [];
+			var guia = [];
+			var smymja=j().getv('a','');
+			var smymjgui=j().getv('b','');
+			var hupai = parseInt(j().getv('hp','0')) || 0; // 胡牌
+			var isZiMo = j().getv('zm','1'); // 是否自摸
+			var nGangHouMopai = j().getv('ghmp','0'); // 是否自摸
+			var chia=[], penga=[], ganga=[];
+			var chi = j().getv('chi',''); // 吃
+			var peng = j().getv('chi',''); // 碰
+			var gang = j().getv('chi',''); // 杠
+			
+			if(smymja!=''){
+				mymja=[];
+				j.each(smymja.split(','),function(i,n){
+					mymja.push(parseInt(n));
+				});
+			}
+			if(smymjgui!=''){
+				guia=[];
+				j.each(smymjgui.split(','),function(i,n){
+					guia.push(parseInt(n));
+				});
+			}
+			if(chi!=''){
+				chia=[];
+				j.each(chi.split(','),function(i,n){
+					chia.push(parseInt(n));
+				});
+			}
+			if(peng!=''){
+				penga=[];
+				j.each(peng.split(','),function(i,n){
+					penga.push(parseInt(n));
+				});
+			}
+			if(gang!=''){
+				ganga=[];
+				j.each(gang.split(','),function(i,n){
+					ganga.push(parseInt(n));
+				});
+			}
+
+			mymja.sort(function(a,b) {return a-b});
+			guia.sort(function(a,b) {return a-b});
+			console.log("手牌除精牌");
+			console.log(mymja);
+			console.log("精牌");
+			console.log(guia);
+			var nguia = guia.map(function(item) {return mjm[item]});
+			var nmymja = mymja.map(function(item) {return mjm[item]});
+			j('#gui').html(j().ui({cid:'gui',w:50,ca:nguia.join('`')}));
+			j('#t').html(j().ui({cid:'t',w:50,ca:nmymja.join('`')}));
+
+			huModule.Preprocess(mymja,hupai,guia,chia,penga,ganga);
+			console.log("结果：");
+			var result = huModule.ting(isZiMo=="1", parseInt(nGangHouMopai));
+			console.log(result);
+			console.log("分数："+huModule.fenList[result.type].winner);
+		}
+		function jg_msco(){
+			j().ui({cid:'houtaiT',ca:'洗牌|xp(1)`新牌|xp()`测试数据|test()'})
+			xp();
+		}
+
+		// 测试样例数据
+		var sample = [
+			{correctType:955, mymja:[1,1], hupai:1, guia:[], isZiMo:1, nGangHouMopai:0, desc:"就一对将，德国自摸大七"},
+
+			{correctType:916, mymja:[1,2], hupai:3, guia:[3,3,3], isZiMo:1, nGangHouMopai:0, desc:"德国精钓（自摸）平胡"},
+			{correctType:914, mymja:[1,2,3], hupai:3, guia:[3,3], isZiMo:0, nGangHouMopai:0, desc:"德国精钓（点炮）平胡"},
+
+			{correctType:956, mymja:[27,27], hupai:3, guia:[3,3,3], isZiMo:1, nGangHouMopai:0, desc:"按新的规则，折算德国精钓"},
+			{correctType:954, mymja:[27,27,3], hupai:3, guia:[3,3], isZiMo:0, nGangHouMopai:0, desc:"拿回一张凑刻子的精，与剩下的精还有自摸的还原精做还原精刻子，原刻子做将，德国大七点炮"},
+
+			{correctType:951, mymja:[6,11,11], hupai:4, guia:[4,5], isZiMo:1, nGangHouMopai:0, desc:"目前是检测不出德国自摸平胡，但实际上检测到，也是算做带精自摸碰碰胡会高分点，所以暂时不管"},
+
+			{correctType:951, mymja:[2,2,3], hupai:4, guia:[4,5], isZiMo:1, nGangHouMopai:0, desc:"可以看作德国自摸平胡，或者有精自摸大七，后者更高分，所以是应该后者"},
+			{correctType:915, mymja:[2,2,3], hupai:4, guia:[4,5], isZiMo:1, nGangHouMopai:0, chi:[11,12,13], desc:"与上面一样的牌，因为有吃，不能看作有精自摸大七，可以看作德国自摸平胡，"},
+
+			{correctType:952, mymja:[4], hupai:5, guia:[5,6,6,6], isZiMo:1, nGangHouMopai:0, desc:"按新规则，可以看作精钓大七96分，或者德国精钓平胡63分，前者高分，应该算前者"},
+			{correctType:952, mymja:[4], hupai:4, guia:[5,6,6,6], isZiMo:1, nGangHouMopai:0, desc:"按新规则，可以看作精钓大七96分，或者德国精钓平胡63分，前者高分，应该算前者"},
+			{correctType:952, mymja:[4], hupai:6, guia:[5,6,6,6], isZiMo:1, nGangHouMopai:0, desc:"按新规则，可以看作精钓大七96分，或者德国精钓平胡63分，前者高分，应该算前者"},
+			{correctType:916, mymja:[4], hupai:5, guia:[5,6,6,6], isZiMo:1, nGangHouMopai:0, chi:[11,12,13], desc:"按新规则，因为有吃，不能看作精钓大七，应看作德国精钓平胡"},
+			{correctType:916, mymja:[4], hupai:6, guia:[5,6,6,6], isZiMo:1, nGangHouMopai:0, chi:[11,12,13], desc:"与上面一样的牌，因为有吃，不能看作精钓大七，胡的是7万，刚好做将，可以看作德国精钓平胡"},
+
+			{correctType:915, mymja:[4,6,11,11], hupai:4, guia:[5], isZiMo:1, nGangHouMopai:0, desc:"这应该是德国自摸平胡，可是原usegui方法中，只考虑先刻后顺，会导致判断为不能胡"},
+
+			{correctType:915, mymja:[1,1,1,2,3,11,11,11,12,13,14], hupai:14, guia:[], isZiMo:1, nGangHouMopai:0, desc:"这种是情况是需要回溯检测的，无论是先刻后顺还是先顺后刻都当作不能胡"},
+
+			{correctType:914, mymja:[1,2,3,4,5,6,8,8,13,14,15,16], hupai:1, guia:[11,12], isZiMo:0, nGangHouMopai:0, desc:"应该是德国平胡，旧版检测不出来"},
+
+			{correctType:950, mymja:[1,1,1,2,4], hupai:4, guia:[3,4,4], isZiMo:0, nGangHouMopai:0, desc:"既可看作德国点炮平胡，也可看作带精点炮大七，后者高分，所以应该算带精点炮大七"},
+
+			{correctType:915, mymja:[1,1,1,1,2,3,4,4], hupai:4, guia:[], isZiMo:1, nGangHouMopai:0, desc:"应该是德国自摸平胡，目前算法有可能检测不出能胡，检查一下"},
+
+			{correctType:915, mymja:[1,1,27,28,28,28,29,30], hupai:30, guia:[], isZiMo:1, nGangHouMopai:0, desc:"应该是德国自摸平胡，目前算法有可能检测不出能胡，检查一下"},
+
+			{correctType:911, mymja:[1,1,3,4], hupai:6, guia:[6], isZiMo:1, nGangHouMopai:1, desc:"新规则，杠开平胡可以带精，这个算有精自摸平胡"},
+
+			{correctType:912, mymja:[6,11,22,23,24], hupai:11, guia:[0,0,0], isZiMo:1, nGangHouMopai:0, desc:"根据新的精钓规则，这个算精钓平胡"},
+			{correctType:952, mymja:[2,5,5,8], hupai:8, guia:[0,0,1,1], isZiMo:1, nGangHouMopai:0, desc:"根据新的精钓规则，这个算精钓大七"},
+			{correctType:952, mymja:[3,3,3,22,22], hupai:1, guia:[0,1,1], isZiMo:1, nGangHouMopai:0, desc:"根据新的精钓规则，这个算精钓大七"},
+			{correctType:942, mymja:[2,4,7,11,15,22,22,22], hupai:7, guia:[0,0,1,1,1,1], isZiMo:1, nGangHouMopai:0, desc:"根据新的精钓规则，这个算精钓小七"},
+			{correctType:956, mymja:[2,2], hupai:4, guia:[4,4,4], isZiMo:1, nGangHouMopai:0, desc:"这个算德国精钓大七"},
+			{correctType:916, mymja:[1,2,3], hupai:3, guia:[4,4], isZiMo:1, nGangHouMopai:0, desc:"这个算德国精钓平胡"},
+		];
+		function test() {
+			var allRight = true;
+			var i, len=sample.length;
+			for(i=0; i<len; i++) {
+				console.log("测试"+(i+1)+"：");
+				var s = sample[i];
+				s.chi = s.chi || [];
+				s.peng = s.peng || [];
+				s.gang = s.gang || [];
+				huModule.Preprocess(s.mymja, s.hupai, s.guia, s.chi, s.peng, s.gang);
+				var ret = huModule.ting(s.isZiMo, s.nGangHouMopai);
+				if(ret.type != s.correctType) {
+					allRight = false;
+					s.desc && console.log(s.desc + "与预想结果不符：");
+					console.log("预想："+s.correctType+" 实际："+ret.type);
+					var nguia = s.guia.map(function(item) {return mjm[item]});
+					var nmymja = s.mymja.map(function(item) {return mjm[item]});
+					console.log("手牌");
+					console.log(nmymja);
+					console.log("精牌");
+					console.log(nguia);
+					console.log("http://www.kxtui.net/testmj4.html?a="+s.mymja.join(',')+"&zm="+s.isZiMo+"&hp="+s.hupai+"&ghmp="+s.nGangHouMopai+"&b="+s.guia.join(',')+"&chi="+s.chi.join(',')+"&peng="+s.peng.join(',')+"&gang="+s.gang.join(','));
+				} else {
+					console.log(s.desc||"" + " 通过");
+				}
+				console.log("====================================================================");
+			}
+			allRight && console.log("全部通过");
+		}
+	</script>
+</html>
